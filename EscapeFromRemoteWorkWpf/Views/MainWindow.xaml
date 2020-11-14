@@ -1,10 +1,67 @@
 ﻿<Window x:Class="EscapeFromRemoteWorkWpf.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:prism="http://prismlibrary.com/"
+        xmlns:tb="http://www.hardcodet.net/taskbar"
+        xmlns:behaviors="clr-namespace:EscapeFromRemoteWorkWpf.Behaviors"
         prism:ViewModelLocator.AutoWireViewModel="True"
-        Title="{Binding Title}" Height="350" Width="525">
+        Title="{Binding Title}" Height="350" Width="525"
+        Icon="/EscapeFromRemoteWorkWpf;component/Resources/EscapeFromRemoteWorkWpf.ico"
+        StateChanged="Window_StateChanged"
+        Closing="Window_Closing">
     <Grid>
-        <ContentControl prism:RegionManager.RegionName="ContentRegion" />
+        <!--通知領域-->
+        <tb:TaskbarIcon x:Name="taskbarIcon" IconSource="/EscapeFromRemoteWorkWpf;component/Resources/EscapeFromRemoteWorkWpf.ico" ToolTipText="{Binding Title}" Visibility="Collapsed">
+            <tb:TaskbarIcon.ContextMenu>
+                <ContextMenu>
+                    <MenuItem x:Name="ShowMainWindowMenuItem" Header="メイン画面を表示" Click="ShowMainWindowMenuItem_Click" />
+                    <MenuItem x:Name="ExitMenuItem" Header="終了" Click="ExitMenuItem_Click" />
+                </ContextMenu>
+            </tb:TaskbarIcon.ContextMenu>
+        </tb:TaskbarIcon>
+
+        <!--設定画面-->
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible">
+            <StackPanel Orientation="Vertical" Margin="5">
+                <TextBlock Text="アプリケーション設定" FontSize="16" Margin="0,0,0,5" />
+                <StackPanel Orientation="Vertical" Margin="20,0,0,5">
+                    <CheckBox IsChecked="{Binding ExitAsMinimized}" Content="ウィンドウを閉じる代わりに通知領域に格納する" />
+                </StackPanel>
+                <Border Width="auto" Height="1" Margin="2" Background="DarkGray" />
+
+                <TextBlock Text="マウス入力設定" FontSize="16" Margin="0,0,0,5" />
+                <StackPanel Orientation="Vertical" Margin="20,0,0,5">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="ウェイト時間(秒): " />
+                        <TextBox Text="{Binding MouseMinRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
+                        <TextBlock Text="～" Margin="5,0,5,0" />
+                        <TextBox Text="{Binding MouseMaxRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="許容誤差(px): " />
+                        <TextBox Text="{Binding MousePrecision}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
+                    </StackPanel>
+                </StackPanel>
+                <Border Width="auto" Height="1" Margin="2" Background="DarkGray" />
+
+                <TextBlock Text="キー入力設定" FontSize="16" Margin="0,0,0,5" />
+                <StackPanel Orientation="Vertical" Margin="20,0,0,5">
+                    <TextBlock Text="Coming soon..." />
+                </StackPanel>
+                <Border Width="auto" Height="1" Margin="2" Background="DarkGray" />
+
+                <TextBlock Text="プロセスハンドル設定" FontSize="16" Margin="0,0,0,5" />
+                <StackPanel Orientation="Vertical" Margin="20,0,0,5">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="ウェイト時間(秒): " />
+                        <TextBox Text="{Binding ProcessHandleMinRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
+                        <TextBlock Text="～" Margin="5,0,5,0" />
+                        <TextBox Text="{Binding ProcessHandleMaxRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+        <!--<ContentControl prism:RegionManager.RegionName="ContentRegion" />-->
     </Grid>
 </Window>

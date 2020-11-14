@@ -10,6 +10,6 @@ namespace EscapeFromRemoteWorkWpf.Common
         /// <summary>
         /// 操作を実行する
         /// </summary>
-        Task Execute();
+        Task ExecuteAsync();
     }
 }

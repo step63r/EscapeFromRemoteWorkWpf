@@ -1,4 +1,5 @@
 ﻿using EscapeFromRemoteWorkWpf.Common;
+using EscapeFromRemoteWorkWpf.Services;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -14,34 +15,62 @@ namespace EscapeFromRemoteWorkWpf.Models
     {
         #region メンバ変数
         /// <summary>
+        /// スレッド状態管理クラス（シングルトン）
+        /// </summary>
+        private ThreadStatusService _threadStatusService = ThreadStatusService.GetInstance();
+        /// <summary>
         /// ランダム秒の最小値
         /// </summary>
-        private readonly int _minRandomSec = 10;
+        private int _minRandomSec = 10;
         /// <summary>
         /// ランダム秒の最大値
         /// </summary>
-        private readonly int _maxRandomSec = 60;
+        private int _maxRandomSec = 60;
         /// <summary>
         /// カーソル座標が移動されたかどうかの誤差 (X, Y)
         /// </summary>
-        private readonly (int X, int Y) _precision = (5, 5);
+        private (int X, int Y) _precision = (5, 5);
         /// <summary>
         /// 最後に検出されたカーソル座標 (X, Y)
         /// </summary>
         private (int? X, int? Y) _lastCursorPos = (null, null);
+        /// <summary>
+        /// スレッドローカルなランダムオブジェクト
+        /// </summary>
+        private readonly Random _random;
         #endregion
 
+        #region コンストラクタ
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public MouseExecutor(int minRandomSec = 10, int maxRandomSec = 60, int precision = 5)
+        {
+            // 設定値を取得する
+            _minRandomSec = minRandomSec;
+            _maxRandomSec = maxRandomSec;
+            _precision = (precision, precision);
+
+            // スレッド状態管理クラスに追加する
+            _threadStatusService.AddStatus(GetType().Name);
+
+            // ランダムオブジェクトを取得する
+            _random = RandomProvider.GetThreadRandom();
+        }
+        #endregion
+
+        #region メソッド
         /// <summary>
         /// マウス操作を実行する
         /// </summary>
-        public async Task Execute()
+        public async Task ExecuteAsync()
         {
             await Task.Run(() =>
             {
-                // TODO: CanellationToken
-                while(true)
+                // TODO: CancellationToken
+                while (true)
                 {
-                    int awaitSec = new Random().Next(_minRandomSec, _maxRandomSec);
+                    int awaitSec = _random.Next(_minRandomSec, _maxRandomSec);
                     Debug.WriteLine($"スレッドを {awaitSec} 秒待ちます...");
                     Thread.Sleep(awaitSec * 1000);
 
@@ -53,30 +82,44 @@ namespace EscapeFromRemoteWorkWpf.Models
                     {
                         // 取得して終わり
                         _lastCursorPos = (currentCursorPos.X, currentCursorPos.Y);
+                        _threadStatusService.SetStatus(GetType().Name, true);
                         Debug.WriteLine($"カーソル座標初期化: ({_lastCursorPos.X}, {_lastCursorPos.Y})");
                     }
                     else
                     {
                         // ある程度カーソルが動いているか
-                        if (Math.Abs((int)_lastCursorPos.X - currentCursorPos.X) > _precision.X || 
+                        if (Math.Abs((int)_lastCursorPos.X - currentCursorPos.X) > _precision.X ||
                         Math.Abs((int)_lastCursorPos.Y - currentCursorPos.Y) > _precision.Y)
                         {
                             // 取得して終わり
                             _lastCursorPos = (currentCursorPos.X, currentCursorPos.Y);
+                            _threadStatusService.SetStatus(GetType().Name, false);
                             Debug.WriteLine($"マウスは操作中: ({_lastCursorPos.X}, {_lastCursorPos.Y})");
                         }
                         else
                         {
-                            // 画面上の適当な座標にカーソルを飛ばす
-                            int nextPosX = new Random().Next(0, (int)SystemParameters.VirtualScreenWidth);
-                            int nextPosY = new Random().Next(0, (int)SystemParameters.VirtualScreenHeight);
-                            NativeMethods.SetCursorPos(nextPosX, nextPosY);
-                            _lastCursorPos = (nextPosX, nextPosY);
-                            Debug.WriteLine($"カーソル座標変更: ({nextPosX}, {nextPosY})");
+                            // 実行可能状態へ移行
+                            _threadStatusService.SetStatus(GetType().Name, true);
+
+                            // 実行中スレッドの全てのステータスがtrueであれば処理可能とみなす
+                            if (!_threadStatusService.GetStatuses().Contains(false))
+                            {
+                                // 画面上の適当な座標にカーソルを飛ばす
+                                int nextPosX = _random.Next(0, (int)SystemParameters.VirtualScreenWidth);
+                                int nextPosY = _random.Next(0, (int)SystemParameters.VirtualScreenHeight);
+                                NativeMethods.SetCursorPos(nextPosX, nextPosY);
+                                _lastCursorPos = (nextPosX, nextPosY);
+                                Debug.WriteLine($"カーソル座標変更: ({nextPosX}, {nextPosY})");
+                            }
+                            else
+                            {
+                                Debug.WriteLine($"実行可能状態でないスレッドがあるのでスキップ");
+                            }
                         }
                     }
                 }
             }).ConfigureAwait(false);
         }
+        #endregion
     }
 }
