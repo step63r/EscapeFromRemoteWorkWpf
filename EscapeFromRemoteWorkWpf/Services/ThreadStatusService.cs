@@ -71,6 +71,19 @@ namespace EscapeFromRemoteWorkWpf.Services
         {
             return _statusDictionary.Values.ToList();
         }
+
+        /// <summary>
+        /// 状態を削除する
+        /// </summary>
+        /// <param name="name">対象のクラス名</param>
+        public void RemoveStatus(string name)
+        {
+            // 一応スレッドセーフにしておく
+            lock (_lockObject)
+            {
+                _statusDictionary.Remove(name);
+            }
+        }
         #endregion
     }
 }

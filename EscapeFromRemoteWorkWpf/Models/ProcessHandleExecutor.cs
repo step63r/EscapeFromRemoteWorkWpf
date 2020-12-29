@@ -63,17 +63,23 @@ namespace EscapeFromRemoteWorkWpf.Models
         /// <summary>
         /// プロセスハンドル操作を実行する
         /// </summary>
+        /// <param name="cancellationToken">CancellationToken</param>
         /// <returns></returns>
-        public async Task ExecuteAsync()
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             await Task.Run(() =>
             {
-                // TODO: CancellationToken
                 while (true)
                 {
                     int awaitSec = _random.Next(_minRandomSec, _maxRandomSec);
                     Debug.WriteLine($"スレッドを {awaitSec} 秒待ちます...");
-                    Thread.Sleep(awaitSec * 1000);
+                    if (cancellationToken.WaitHandle.WaitOne(awaitSec * 1000))
+                    {
+                        Debug.WriteLine("キャンセルされました");
+                        // スレッド状態管理クラスから削除する
+                        _threadStatusService.RemoveStatus(GetType().Name);
+                        break;
+                    }
 
                     // 現在のアクティブウィンドウのプロセスIDを取得
                     IntPtr ptr = NativeMethods.GetForegroundWindow();

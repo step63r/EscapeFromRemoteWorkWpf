@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace EscapeFromRemoteWorkWpf.Common
 {
@@ -10,6 +11,7 @@ namespace EscapeFromRemoteWorkWpf.Common
         /// <summary>
         /// 操作を実行する
         /// </summary>
-        Task ExecuteAsync();
+        /// <param name="cancellationToken">CancellationToken</param>
+        Task ExecuteAsync(CancellationToken cancellationToken);
     }
 }

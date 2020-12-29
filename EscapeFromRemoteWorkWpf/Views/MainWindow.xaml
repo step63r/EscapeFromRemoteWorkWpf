@@ -5,11 +5,27 @@
         xmlns:prism="http://prismlibrary.com/"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         xmlns:behaviors="clr-namespace:EscapeFromRemoteWorkWpf.Behaviors"
+        xmlns:extensions="clr-namespace:EscapeFromRemoteWorkWpf.Extensions"
+        xmlns:common="clr-namespace:EscapeFromRemoteWorkWpf.Common"
+        xmlns:converters="clr-namespace:EscapeFromRemoteWorkWpf.Converters"
         prism:ViewModelLocator.AutoWireViewModel="True"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{DynamicResource MaterialDesignFont}"
         Title="{Binding Title}" Height="350" Width="525"
         Icon="/EscapeFromRemoteWorkWpf;component/Resources/EscapeFromRemoteWorkWpf.ico"
         StateChanged="Window_StateChanged"
         Closing="Window_Closing">
+    <Window.Resources>
+        <ResourceDictionary>
+            <converters:BooleanToNegativeConverter x:Key="BooleanToNegativeConverter" />
+        </ResourceDictionary>
+    </Window.Resources>
     <Grid>
         <!--通知領域-->
         <tb:TaskbarIcon x:Name="taskbarIcon" IconSource="/EscapeFromRemoteWorkWpf;component/Resources/EscapeFromRemoteWorkWpf.ico" ToolTipText="{Binding Title}" Visibility="Collapsed">
@@ -24,39 +40,63 @@
         <!--設定画面-->
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible">
             <StackPanel Orientation="Vertical" Margin="5">
-                <TextBlock Text="アプリケーション設定" FontSize="16" Margin="0,0,0,5" />
+                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Text="ステータス" Margin="0,0,0,5" />
+                <StackPanel Orientation="Vertical" Margin="20,0,0,5">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="自動実行は " />
+                        <TextBlock Text="{extensions:SwitchBinding IsRunning, 実行中, 停止中}" />
+                        <TextBlock Text=" です" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}" Command="{Binding RunCommand}" Content="実行" Margin="0,0,10,0" />
+                        <Button Style="{StaticResource MaterialDesignRaisedAccentButton}" Command="{Binding SuspendCommand}" Content="停止" />
+                    </StackPanel>
+                </StackPanel>
+                <Border Width="auto" Height="1" Margin="2" Background="DarkGray" />
+                
+                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Text="アプリケーション設定" Margin="0,0,0,5" />
                 <StackPanel Orientation="Vertical" Margin="20,0,0,5">
                     <CheckBox IsChecked="{Binding ExitAsMinimized}" Content="ウィンドウを閉じる代わりに通知領域に格納する" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="開始時刻: " VerticalAlignment="Center" />
+                        <materialDesign:TimePicker SelectedTime="{Binding StartTime}" Is24Hours="True" materialDesign:HintAssist.Hint="時刻を選択" IsEnabled="{Binding ElementName=isFromManually, Path=IsChecked, Converter={StaticResource BooleanToNegativeConverter}}" />
+                        <CheckBox Content="手動で制御" IsChecked="{Binding IsStartManually}" Margin="20,0,0,0" x:Name="isFromManually" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="終了時刻: " VerticalAlignment="Center" />
+                        <materialDesign:TimePicker SelectedTime="{Binding EndTime}" Is24Hours="True" materialDesign:HintAssist.Hint="時刻を選択" IsEnabled="{Binding ElementName=isToManually, Path=IsChecked, Converter={StaticResource BooleanToNegativeConverter}}" />
+                        <CheckBox Content="手動で制御" IsChecked="{Binding IsEndManually}" Margin="20,0,0,0" x:Name="isToManually" />
+                    </StackPanel>
                 </StackPanel>
                 <Border Width="auto" Height="1" Margin="2" Background="DarkGray" />
 
-                <TextBlock Text="マウス入力設定" FontSize="16" Margin="0,0,0,5" />
+                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Text="マウス入力設定" Margin="0,0,0,5" />
                 <StackPanel Orientation="Vertical" Margin="20,0,0,5">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <TextBlock Text="ウェイト時間(秒): " />
+                        <TextBlock Text="ウェイト時間(秒): " VerticalAlignment="Center" />
                         <TextBox Text="{Binding MouseMinRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
-                        <TextBlock Text="～" Margin="5,0,5,0" />
+                        <TextBlock Text="～" Margin="5,0,5,0" VerticalAlignment="Center" />
                         <TextBox Text="{Binding MouseMaxRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="許容誤差(px): " />
+                        <TextBlock Text="許容誤差(px): " VerticalAlignment="Center" />
                         <TextBox Text="{Binding MousePrecision}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
                     </StackPanel>
                 </StackPanel>
                 <Border Width="auto" Height="1" Margin="2" Background="DarkGray" />
 
-                <TextBlock Text="キー入力設定" FontSize="16" Margin="0,0,0,5" />
+                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Text="キー入力設定" Margin="0,0,0,5" />
                 <StackPanel Orientation="Vertical" Margin="20,0,0,5">
                     <TextBlock Text="Coming soon..." />
                 </StackPanel>
                 <Border Width="auto" Height="1" Margin="2" Background="DarkGray" />
 
-                <TextBlock Text="プロセスハンドル設定" FontSize="16" Margin="0,0,0,5" />
+                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Text="プロセスハンドル設定" Margin="0,0,0,5" />
                 <StackPanel Orientation="Vertical" Margin="20,0,0,5">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <TextBlock Text="ウェイト時間(秒): " />
+                        <TextBlock Text="ウェイト時間(秒): " VerticalAlignment="Center" />
                         <TextBox Text="{Binding ProcessHandleMinRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
-                        <TextBlock Text="～" Margin="5,0,5,0" />
+                        <TextBlock Text="～" Margin="5,0,5,0" VerticalAlignment="Center" />
                         <TextBox Text="{Binding ProcessHandleMaxRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
                     </StackPanel>
                 </StackPanel>

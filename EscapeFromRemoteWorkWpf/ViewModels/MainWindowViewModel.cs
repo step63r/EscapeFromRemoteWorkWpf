@@ -2,7 +2,13 @@
 using EscapeFromRemoteWorkWpf.Models;
 using Prism.Commands;
 using Prism.Mvvm;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace EscapeFromRemoteWorkWpf.ViewModels
 {
@@ -52,6 +58,74 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             {
                 SetProperty(ref _exitAsMinimized, value);
                 Properties.Settings.Default.ExitAsMinimized = value;
+            }
+        }
+
+        private DateTime _startTime = new DateTime(2000, 1, 1, 8, 50, 0);
+        /// <summary>
+        /// 開始時刻
+        /// </summary>
+        public DateTime StartTime
+        {
+            get
+            {
+                return _startTime;
+            }
+            set
+            {
+                SetProperty(ref _startTime, value);
+                Properties.Settings.Default.StartTime = value;
+            }
+        }
+
+        private bool _isStartManually = true;
+        /// <summary>
+        /// 開始時刻を手動で制御
+        /// </summary>
+        public bool IsStartManually
+        {
+            get
+            {
+                return _isStartManually;
+            }
+            set
+            {
+                SetProperty(ref _isStartManually, value);
+                Properties.Settings.Default.IsStartManually = value;
+            }
+        }
+
+        private DateTime _endTime = new DateTime(2000, 1, 1, 17, 35, 0);
+        /// <summary>
+        /// 終了時刻
+        /// </summary>
+        public DateTime EndTime
+        {
+            get
+            {
+                return _endTime;
+            }
+            set
+            {
+                SetProperty(ref _endTime, value);
+                Properties.Settings.Default.EndTime = value;
+            }
+        }
+
+        private bool _isEndManually = false;
+        /// <summary>
+        /// 終了時刻を手動で制御
+        /// </summary>
+        public bool IsEndManually
+        {
+            get
+            {
+                return _isEndManually;
+            }
+            set
+            {
+                SetProperty(ref _isEndManually, value);
+                Properties.Settings.Default.IsEndManually = value;
             }
         }
 
@@ -139,6 +213,48 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
                 Properties.Settings.Default.ProcessHandleMaxRandomSec = value;
             }
         }
+
+        private bool _isRunning = false;
+        /// <summary>
+        /// 制御が実行中かどうか
+        /// </summary>
+        public bool IsRunning
+        {
+            get
+            {
+                return _isRunning;
+            }
+            set
+            {
+                SetProperty(ref _isRunning, value);
+                RunCommand.RaiseCanExecuteChanged();
+                SuspendCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        /// <summary>
+        /// 実行コマンド
+        /// </summary>
+        public DelegateCommand RunCommand { get; private set; }
+        /// <summary>
+        /// 停止コマンド
+        /// </summary>
+        public DelegateCommand SuspendCommand { get; private set; }
+        #endregion
+
+        #region メンバ変数
+        /// <summary>
+        /// ディスパッチャタイマー
+        /// </summary>
+        private DispatcherTimer _dispatcherTimer = new DispatcherTimer();
+        /// <summary>
+        /// CancellationTokenSource
+        /// </summary>
+        private CancellationTokenSource _cancellationTokenSource;
+        /// <summary>
+        /// CancellationToken
+        /// </summary>
+        private CancellationToken _cancellationToken;
         #endregion
 
         /// <summary>
@@ -153,12 +269,102 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             MousePrecision = Properties.Settings.Default.MousePrecision;
             ProcessHandleMinRandomSec = Properties.Settings.Default.ProcessHandleMinRandomSec;
             ProcessHandleMaxRandomSec = Properties.Settings.Default.ProcessHandleMaxRandomSec;
+            StartTime = Properties.Settings.Default.StartTime;
+            IsStartManually = Properties.Settings.Default.IsStartManually;
+            EndTime = Properties.Settings.Default.EndTime;
+            IsEndManually = Properties.Settings.Default.IsEndManually;
 
+            // コマンド登録
+            RunCommand = new DelegateCommand(ExecuteRunCommand, CanExecuteRunCommand);
+            SuspendCommand = new DelegateCommand(ExecuteSuspendCommand, CanExecuteSuspendCommand);
+
+            // タイマー開始
+            _dispatcherTimer.Tick += OnDispatcherTimerTicked;
+            _dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
+            _dispatcherTimer.Start();
+        }
+
+        /// <summary>
+        /// ファイナライザ
+        /// </summary>
+        ~MainWindowViewModel()
+        {
+            _dispatcherTimer.Tick -= OnDispatcherTimerTicked;
+        }
+
+        /// <summary>
+        /// 実行コマンドを実行する
+        /// </summary>
+        private void ExecuteRunCommand()
+        {
+            // キャンセルトークン生成
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
+
+            // プロセス生成
             var mouseExecutor = new MouseExecutor(MouseMinRandomSec, MouseMaxRandomSec, MousePrecision);
-            _ = mouseExecutor.ExecuteAsync();
-
+            _ = mouseExecutor.ExecuteAsync(_cancellationToken);
             var processHandleExecutor = new ProcessHandleExecutor(ProcessHandleMinRandomSec, ProcessHandleMaxRandomSec);
-            _ = processHandleExecutor.ExecuteAsync();
+            _ = processHandleExecutor.ExecuteAsync(_cancellationToken);
+
+            IsRunning = true;
+        }
+        /// <summary>
+        /// 実行コマンドが実行可能かどうか
+        /// </summary>
+        /// <returns></returns>
+        private bool CanExecuteRunCommand()
+        {
+            return !IsRunning;
+        }
+
+        /// <summary>
+        /// 停止コマンドを実行する
+        /// </summary>
+        private void ExecuteSuspendCommand()
+        {
+            _cancellationTokenSource.Cancel();
+            IsRunning = false;
+        }
+        /// <summary>
+        /// 停止コマンドが実行可能かどうか
+        /// </summary>
+        /// <returns></returns>
+        private bool CanExecuteSuspendCommand()
+        {
+            return IsRunning;
+        }
+
+        /// <summary>
+        /// ディスパッチャタイマーのイベントハンドラ
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnDispatcherTimerTicked(object sender, EventArgs e)
+        {
+            // 起動処理
+            if (!IsRunning)
+            {
+                if (!IsStartManually && 
+                    TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0 &&
+                    TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) < 0)
+                {
+                    Debug.WriteLine("設定の時間内のため自動で処理を開始します");
+                    ExecuteRunCommand();
+                }
+            }
+
+            // 終了処理
+            if (IsRunning)
+            {
+                if (!IsEndManually &&
+                    (TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) < 0 ||
+                    TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0))
+                {
+                    Debug.WriteLine("設定の時間外のため自動で処理を終了します");
+                    ExecuteSuspendCommand();
+                }
+            }
         }
     }
 }

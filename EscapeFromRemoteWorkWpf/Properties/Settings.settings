@@ -35,5 +35,17 @@
     <Setting Name="ProcessHandleMaxRandomSec" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">60</Value>
     </Setting>
+    <Setting Name="StartTime" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">01/01/2000 08:50:00</Value>
+    </Setting>
+    <Setting Name="IsStartManually" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="EndTime" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">01/01/2000 17:35:00</Value>
+    </Setting>
+    <Setting Name="IsEndManually" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
