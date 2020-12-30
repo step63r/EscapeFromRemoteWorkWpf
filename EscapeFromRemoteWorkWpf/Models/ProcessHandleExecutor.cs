@@ -4,6 +4,7 @@ using EscapeFromRemoteWorkWpf.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -145,7 +146,12 @@ namespace EscapeFromRemoteWorkWpf.Models
             if (NativeMethods.IsWindowVisible(hWnd) &&
                 NativeMethods.GetWindowTextLength(hWnd) != 0)
             {
-                _currentWindowHandles.Add(hWnd);
+                // 更にUWPアプリを除外する
+                NativeMethods.DwmGetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_CLOAKED, out bool isCloaked, Marshal.SizeOf(typeof(bool)));
+                if (!isCloaked)
+                {
+                    _currentWindowHandles.Add(hWnd);
+                }
             }
             return true;
         }
