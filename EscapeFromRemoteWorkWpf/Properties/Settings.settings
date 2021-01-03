@@ -47,5 +47,8 @@
     <Setting Name="IsEndManually" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="TargetProcesses" Type="System.Collections.ObjectModel.ObservableCollection&lt;System.String&gt;" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

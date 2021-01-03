@@ -111,17 +111,6 @@ namespace EscapeFromRemoteWorkWpf.Common
         public static extern bool CloseHandle(IntPtr handle);
 
         /// <summary>
-        /// 指定されたモジュールのベース名を取得する
-        /// </summary>
-        /// <param name="hWnd">プロセスハンドル</param>
-        /// <param name="hModule">モジュールハンドル</param>
-        /// <param name="lpBaseName">モジュールのベース名を受け取る変数</param>
-        /// <param name="nSize">モジュールのベース名を受け取る最大文字数</param>
-        /// <returns>成功/失敗</returns>
-        [DllImport("user32.dll")]
-        public static extern uint GetModuleBaseName(IntPtr hWnd, IntPtr hModule, [MarshalAs(UnmanagedType.LPStr), Out] StringBuilder lpBaseName, uint nSize);
-
-        /// <summary>
         /// EnumWindowsから呼び出されるコールバック関数のデリゲート
         /// </summary>
         /// <param name="hWnd">ウィンドウハンドル</param>

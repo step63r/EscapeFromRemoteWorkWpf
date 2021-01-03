@@ -53,7 +53,7 @@
                     </StackPanel>
                 </StackPanel>
                 <Border Width="auto" Height="1" Margin="2" Background="DarkGray" />
-                
+
                 <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Text="アプリケーション設定" Margin="0,0,0,5" />
                 <StackPanel Orientation="Vertical" Margin="20,0,0,5">
                     <CheckBox IsChecked="{Binding ExitAsMinimized}" Content="ウィンドウを閉じる代わりに通知領域に格納する" />
@@ -99,9 +99,18 @@
                         <TextBlock Text="～" Margin="5,0,5,0" VerticalAlignment="Center" />
                         <TextBox Text="{Binding ProcessHandleMaxRandomSec}" HorizontalContentAlignment="Right" Width="50" Padding="0,0,5,0" behaviors:TextBoxBehavior.IsNumeric="True" />
                     </StackPanel>
+                    <TextBox Text="{Binding InputProcess, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="プロセス名を入力してEnter...">
+                        <TextBox.InputBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding AddToTargetProcessesCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <ListView ItemsSource="{Binding TargetProcesses}" SelectedItem="{Binding SelectedProcess}">
+                        <ListView.InputBindings>
+                            <KeyBinding Gesture="Delete" Command="{Binding RemoveFromTargetProcessesCommand}" />
+                        </ListView.InputBindings>
+                    </ListView>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
-        <!--<ContentControl prism:RegionManager.RegionName="ContentRegion" />-->
     </Grid>
 </Window>

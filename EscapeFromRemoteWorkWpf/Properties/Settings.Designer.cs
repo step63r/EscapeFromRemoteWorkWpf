@@ -202,5 +202,16 @@ namespace EscapeFromRemoteWorkWpf.Properties {
                 this["IsEndManually"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.ObjectModel.ObservableCollection<System.String> TargetProcesses {
+            get {
+                return ((global::System.Collections.ObjectModel.ObservableCollection<System.String>)(this["TargetProcesses"]));
+            }
+            set {
+                this["TargetProcesses"] = value;
+            }
+        }
     }
 }

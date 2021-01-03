@@ -4,6 +4,7 @@ using Prism.Commands;
 using Prism.Mvvm;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -214,6 +215,57 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             }
         }
 
+        private ObservableCollection<string> _targetProcesses = new ObservableCollection<string>();
+        /// <summary>
+        /// フォーカスを当てる対象プロセス名
+        /// </summary>
+        /// <remarks>空の場合は実行中の全てのプロセスが対象となる</remarks>
+        public ObservableCollection<string> TargetProcesses
+        {
+            get
+            {
+                return _targetProcesses;
+            }
+            set
+            {
+                SetProperty(ref _targetProcesses, value);
+                Properties.Settings.Default.TargetProcesses = value;
+            }
+        }
+
+        private string _selectedProcess = "";
+        /// <summary>
+        /// 選択されたプロセス名
+        /// </summary>
+        public string SelectedProcess
+        {
+            get
+            {
+                return _selectedProcess;
+            }
+            set
+            {
+                SetProperty(ref _selectedProcess, value);
+                InputProcess = value;
+            }
+        }
+
+        private string _inputProcess = "";
+        /// <summary>
+        /// 入力中のプロセス名
+        /// </summary>
+        public string InputProcess
+        {
+            get
+            {
+                return _inputProcess;
+            }
+            set
+            {
+                SetProperty(ref _inputProcess, value);
+            }
+        }
+
         private bool _isRunning = false;
         /// <summary>
         /// 制御が実行中かどうか
@@ -240,6 +292,14 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
         /// 停止コマンド
         /// </summary>
         public DelegateCommand SuspendCommand { get; private set; }
+        /// <summary>
+        /// 対象プロセス一覧に追加コマンド
+        /// </summary>
+        public DelegateCommand AddToTargetProcessesCommand { get; private set; }
+        /// <summary>
+        /// 対象プロセス一覧から削除コマンド
+        /// </summary>
+        public DelegateCommand RemoveFromTargetProcessesCommand { get; private set; }
         #endregion
 
         #region メンバ変数
@@ -273,10 +333,13 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             IsStartManually = Properties.Settings.Default.IsStartManually;
             EndTime = Properties.Settings.Default.EndTime;
             IsEndManually = Properties.Settings.Default.IsEndManually;
+            TargetProcesses = Properties.Settings.Default.TargetProcesses ?? new ObservableCollection<string>();
 
             // コマンド登録
             RunCommand = new DelegateCommand(ExecuteRunCommand, CanExecuteRunCommand);
             SuspendCommand = new DelegateCommand(ExecuteSuspendCommand, CanExecuteSuspendCommand);
+            AddToTargetProcessesCommand = new DelegateCommand(ExecuteAddToTargetProcessesCommand, CanExecuteAddToTargetProcessesCommand);
+            RemoveFromTargetProcessesCommand = new DelegateCommand(ExecuteRemoveFromTargetProcessesCommand, CanExecuteRemoveFromTargetProcessesCommand);
 
             // タイマー開始
             _dispatcherTimer.Tick += OnDispatcherTimerTicked;
@@ -304,7 +367,7 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             // プロセス生成
             var mouseExecutor = new MouseExecutor(MouseMinRandomSec, MouseMaxRandomSec, MousePrecision);
             _ = mouseExecutor.ExecuteAsync(_cancellationToken);
-            var processHandleExecutor = new ProcessHandleExecutor(ProcessHandleMinRandomSec, ProcessHandleMaxRandomSec);
+            var processHandleExecutor = new ProcessHandleExecutor(ProcessHandleMinRandomSec, ProcessHandleMaxRandomSec, new List<string>(TargetProcesses));
             _ = processHandleExecutor.ExecuteAsync(_cancellationToken);
 
             IsRunning = true;
@@ -333,6 +396,40 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
         private bool CanExecuteSuspendCommand()
         {
             return IsRunning;
+        }
+
+        /// <summary>
+        /// 対象プロセス一覧に追加コマンドを実行する
+        /// </summary>
+        private void ExecuteAddToTargetProcessesCommand()
+        {
+            TargetProcesses.Add(InputProcess);
+            InputProcess = "";
+        }
+        /// <summary>
+        /// 対象プロセス一覧に追加コマンドが実行可能かどうか
+        /// </summary>
+        /// <returns></returns>
+        private bool CanExecuteAddToTargetProcessesCommand()
+        {
+            return !(string.IsNullOrEmpty(InputProcess) || TargetProcesses.Contains(InputProcess));
+        }
+
+        /// <summary>
+        /// 対象プロセス一覧から削除コマンドを実行する
+        /// </summary>
+        private void ExecuteRemoveFromTargetProcessesCommand()
+        {
+            TargetProcesses.Remove(SelectedProcess);
+            SelectedProcess = "";
+        }
+        /// <summary>
+        /// 対象プロセス一覧から削除コマンドが実行可能かどうか
+        /// </summary>
+        /// <returns></returns>
+        private bool CanExecuteRemoveFromTargetProcessesCommand()
+        {
+            return !string.IsNullOrEmpty(SelectedProcess) && TargetProcesses.Contains(SelectedProcess);
         }
 
         /// <summary>
