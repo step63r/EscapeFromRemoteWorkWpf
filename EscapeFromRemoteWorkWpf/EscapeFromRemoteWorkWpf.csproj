@@ -71,6 +71,7 @@
     </Compile>
     <Compile Include="Behaviors\TextBoxBehavior.cs" />
     <Compile Include="Behaviors\WindowClosingBehavior.cs" />
+    <Compile Include="Common\DailyRollingFileAppender.cs" />
     <Compile Include="Common\IClosing.cs" />
     <Compile Include="Common\IExecutor.cs" />
     <Compile Include="Common\NativeMethods.cs" />
@@ -106,6 +107,9 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="app.config" />
+    <None Include="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -114,6 +118,9 @@
   <ItemGroup>
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf">
       <Version>1.0.8</Version>
+    </PackageReference>
+    <PackageReference Include="log4net">
+      <Version>2.0.12</Version>
     </PackageReference>
     <PackageReference Include="MaterialDesignColors">
       <Version>1.2.7</Version>

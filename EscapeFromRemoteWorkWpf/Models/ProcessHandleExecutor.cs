@@ -1,10 +1,12 @@
 ﻿using EscapeFromRemoteWorkWpf.Common;
 using EscapeFromRemoteWorkWpf.Extensions;
 using EscapeFromRemoteWorkWpf.Services;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +19,10 @@ namespace EscapeFromRemoteWorkWpf.Models
     public class ProcessHandleExecutor : IExecutor
     {
         #region メンバ変数
+        /// <summary>
+        /// ロガー
+        /// </summary>
+        private readonly ILog _logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         /// <summary>
         /// スレッド状態管理クラス（シングルトン）
         /// </summary>
@@ -82,10 +88,10 @@ namespace EscapeFromRemoteWorkWpf.Models
                 while (true)
                 {
                     int awaitSec = _random.Next(_minRandomSec, _maxRandomSec);
-                    Debug.WriteLine($"スレッドを {awaitSec} 秒待ちます...");
+                    _logger.Info($"スレッドを {awaitSec} 秒待ちます...");
                     if (cancellationToken.WaitHandle.WaitOne(awaitSec * 1000))
                     {
-                        Debug.WriteLine("キャンセルされました");
+                        _logger.Info("キャンセルされました");
                         // スレッド状態管理クラスから削除する
                         _threadStatusService.RemoveStatus(GetType().Name);
                         break;
@@ -101,7 +107,7 @@ namespace EscapeFromRemoteWorkWpf.Models
                         // 取得して終わり
                         _lastWindowProcessId = currentProcessId;
                         _threadStatusService.SetStatus(GetType().Name, true);
-                        Debug.WriteLine($"アクティブウィンドウ初期化: {_lastWindowProcessId}");
+                        _logger.Info($"アクティブウィンドウ初期化: {_lastWindowProcessId}");
                     }
                     else
                     {
@@ -111,7 +117,7 @@ namespace EscapeFromRemoteWorkWpf.Models
                             // 取得して終わり
                             _lastWindowProcessId = currentProcessId;
                             _threadStatusService.SetStatus(GetType().Name, false);
-                            Debug.WriteLine($"アクティブウィンドウが変更されている: {_lastWindowProcessId}");
+                            _logger.Info($"アクティブウィンドウが変更されている: {_lastWindowProcessId}");
                         }
                         else
                         {
@@ -140,7 +146,7 @@ namespace EscapeFromRemoteWorkWpf.Models
                                                 _ = NativeMethods.GetWindowThreadProcessId(nextHandle, out int nextProcessId);
                                                 NativeMethods.SetForegroundWindow(nextHandle);
                                                 _lastWindowProcessId = nextProcessId;
-                                                Debug.WriteLine($"アクティブウィンドウ変更: {nextProcessId}");
+                                                _logger.Info($"アクティブウィンドウ変更: {nextProcessId}");
                                             }
                                         }
                                     }
@@ -153,7 +159,7 @@ namespace EscapeFromRemoteWorkWpf.Models
                                         }
                                         catch (Win32Exception ex)
                                         {
-                                            Debug.WriteLine($"指定したファイルが見つからなかったか、ファイルを開いているときにエラーが発生しました: {nextProcessName}");
+                                            _logger.Info($"指定したファイルが見つからなかったか、ファイルを開いているときにエラーが発生しました: {nextProcessName}");
                                         }
                                     }
                                 }
@@ -166,11 +172,11 @@ namespace EscapeFromRemoteWorkWpf.Models
                                         _ = NativeMethods.GetWindowThreadProcessId(nextHandle, out int nextProcessId);
                                         NativeMethods.SetForegroundWindow(nextHandle);
                                         _lastWindowProcessId = nextProcessId;
-                                        Debug.WriteLine($"アクティブウィンドウ変更: {nextProcessId}");
+                                        _logger.Info($"アクティブウィンドウ変更: {nextProcessId}");
                                     }
                                     else
                                     {
-                                        Debug.WriteLine($"ウィンドウが1つもないので処理スキップ");
+                                        _logger.Info($"ウィンドウが1つもないので処理スキップ");
                                     }
                                 }
                             }

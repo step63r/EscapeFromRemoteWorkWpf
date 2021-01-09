@@ -1,7 +1,8 @@
 ﻿using EscapeFromRemoteWorkWpf.Common;
 using EscapeFromRemoteWorkWpf.Services;
+using log4net;
 using System;
-using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,6 +15,10 @@ namespace EscapeFromRemoteWorkWpf.Models
     public class MouseExecutor : IExecutor
     {
         #region メンバ変数
+        /// <summary>
+        /// ロガー
+        /// </summary>
+        private readonly ILog _logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         /// <summary>
         /// スレッド状態管理クラス（シングルトン）
         /// </summary>
@@ -72,10 +77,10 @@ namespace EscapeFromRemoteWorkWpf.Models
                 while (true)
                 {
                     int awaitSec = _random.Next(_minRandomSec, _maxRandomSec);
-                    Debug.WriteLine($"スレッドを {awaitSec} 秒待ちます...");
+                    _logger.Info($"スレッドを {awaitSec} 秒待ちます...");
                     if (cancellationToken.WaitHandle.WaitOne(awaitSec * 1000))
                     {
-                        Debug.WriteLine("キャンセルされました");
+                        _logger.Info("キャンセルされました");
                         // スレッド状態管理クラスから削除する
                         _threadStatusService.RemoveStatus(GetType().Name);
                         break;
@@ -90,7 +95,7 @@ namespace EscapeFromRemoteWorkWpf.Models
                         // 取得して終わり
                         _lastCursorPos = (currentCursorPos.X, currentCursorPos.Y);
                         _threadStatusService.SetStatus(GetType().Name, true);
-                        Debug.WriteLine($"カーソル座標初期化: ({_lastCursorPos.X}, {_lastCursorPos.Y})");
+                        _logger.Info($"カーソル座標初期化: ({_lastCursorPos.X}, {_lastCursorPos.Y})");
                     }
                     else
                     {
@@ -101,7 +106,7 @@ namespace EscapeFromRemoteWorkWpf.Models
                             // 取得して終わり
                             _lastCursorPos = (currentCursorPos.X, currentCursorPos.Y);
                             _threadStatusService.SetStatus(GetType().Name, false);
-                            Debug.WriteLine($"マウスは操作中: ({_lastCursorPos.X}, {_lastCursorPos.Y})");
+                            _logger.Info($"マウスは操作中: ({_lastCursorPos.X}, {_lastCursorPos.Y})");
                         }
                         else
                         {
@@ -116,11 +121,11 @@ namespace EscapeFromRemoteWorkWpf.Models
                                 int nextPosY = _random.Next(0, (int)SystemParameters.VirtualScreenHeight);
                                 NativeMethods.SetCursorPos(nextPosX, nextPosY);
                                 _lastCursorPos = (nextPosX, nextPosY);
-                                Debug.WriteLine($"カーソル座標変更: ({nextPosX}, {nextPosY})");
+                                _logger.Info($"カーソル座標変更: ({nextPosX}, {nextPosY})");
                             }
                             else
                             {
-                                Debug.WriteLine($"実行可能状態でないスレッドがあるのでスキップ");
+                                _logger.Info($"実行可能状態でないスレッドがあるのでスキップ");
                             }
                         }
                     }

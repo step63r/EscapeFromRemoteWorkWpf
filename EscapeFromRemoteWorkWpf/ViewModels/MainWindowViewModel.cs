@@ -1,13 +1,12 @@
-﻿using EscapeFromRemoteWorkWpf.Common;
-using EscapeFromRemoteWorkWpf.Models;
+﻿using EscapeFromRemoteWorkWpf.Models;
+using log4net;
 using Prism.Commands;
 using Prism.Mvvm;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -304,6 +303,10 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
 
         #region メンバ変数
         /// <summary>
+        /// ロガー
+        /// </summary>
+        private readonly ILog _logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        /// <summary>
         /// ディスパッチャタイマー
         /// </summary>
         private DispatcherTimer _dispatcherTimer = new DispatcherTimer();
@@ -444,7 +447,7 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             {
                 if (!IsStartManually && TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0)
                 {
-                    Debug.WriteLine("設定の時間内のため自動で処理を開始します");
+                    _logger.Info("設定の時間内のため自動で処理を開始します");
                     ExecuteRunCommand();
                 }
             }
@@ -454,7 +457,7 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             {
                 if (!IsEndManually && TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0)
                 {
-                    Debug.WriteLine("設定の時間外のため自動で処理を終了します");
+                    _logger.Info("設定の時間外のため自動で処理を終了します");
                     ExecuteSuspendCommand();
                 }
             }
