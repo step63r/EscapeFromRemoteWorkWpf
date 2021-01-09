@@ -79,6 +79,7 @@
     <Compile Include="Extensions\SwitchBindingExtension.cs" />
     <Compile Include="Converters\BooleanToNegativeConverter.cs" />
     <Compile Include="Extensions\ListExtension.cs" />
+    <Compile Include="Models\KeyExecutor.cs" />
     <Compile Include="Models\MouseExecutor.cs" />
     <Compile Include="Models\ProcessHandleExecutor.cs" />
     <Compile Include="Services\ThreadStatusService.cs" />

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 
 namespace EscapeFromRemoteWorkWpf.Common
 {
@@ -18,6 +20,59 @@ namespace EscapeFromRemoteWorkWpf.Common
         /// Y座標
         /// </summary>
         public int Y;
+    }
+
+    /// <summary>
+    /// キーボードの状態の構造体
+    /// </summary>
+    public struct KeyboardState
+    {
+        public Stroke Stroke;
+        public Keys Key;
+        public uint ScanCode;
+        public uint Flags;
+        public uint Time;
+        public IntPtr ExtraInfo;
+    }
+
+    /// <summary>
+    /// 挙動の列挙型
+    /// </summary>
+    public enum Stroke
+    {
+        /// <summary>
+        /// キーダウン
+        /// </summary>
+        KEY_DOWN,
+        /// <summary>
+        /// キーアップ
+        /// </summary>
+        KEY_UP,
+        /// <summary>
+        /// システムキーダウン
+        /// </summary>
+        SYSKEY_DOWN,
+        /// <summary>
+        /// システムキーアップ
+        /// </summary>
+        SYSKEY_UP,
+        /// <summary>
+        /// 不明
+        /// </summary>
+        UNKNOWN
+    }
+
+    /// <summary>
+    /// キーボード入力イベント構造体
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KBDLLHOOKSTRUCT
+    {
+        public uint vkCode;
+        public uint scanCode;
+        public uint flags;
+        public uint time;
+        public IntPtr dwExtraInfo;
     }
 
     /// <summary>
@@ -65,6 +120,47 @@ namespace EscapeFromRemoteWorkWpf.Common
         /// <returns>成功/失敗</returns>
         [DllImport("user32.dll")]
         public static extern bool GetCursorPos(out POINT lpPoint);
+        #endregion
+
+        #region キー系
+        /// <summary>
+        /// フックプロシージャのデリゲート
+        /// </summary>
+        /// <param name="nCode">フックプロシージャに渡すフックコード</param>
+        /// <param name="msg">フックプロシージャに渡す値</param>
+        /// <param name="kbdllhookstruct">フックプロシージャに渡す値</param>
+        /// <returns>フックチェーン内の次のフックプロシージャの戻り値</returns>
+        public delegate IntPtr KeyboardHookCallback(int nCode, uint msg, ref KBDLLHOOKSTRUCT kbdllhookstruct);
+
+        /// <summary>
+        /// アプリケーション定義のフックプロシージャをフックチェーン内にインストールする
+        /// </summary>
+        /// <param name="idHook">フックタイプ</param>
+        /// <param name="lpfn">フックプロシージャ</param>
+        /// <param name="hMod">アプリケーションインスタンスのハンドル</param>
+        /// <param name="dwThreadId">スレッドID</param>
+        /// <returns>フックプロシージャのハンドル（失敗したらNULL）</returns>
+        [DllImport("user32.dll")]
+        public static extern IntPtr SetWindowsHookEx(int idHook, KeyboardHookCallback lpfn, IntPtr hMod, uint dwThreadId);
+
+        /// <summary>
+        /// 現在のフックチェーン内の次のフックプロシージャにフック情報を渡す
+        /// </summary>
+        /// <param name="hhk">現在のフックのハンドル</param>
+        /// <param name="nCode">フックプロシージャに渡すフックコード</param>
+        /// <param name="msg">フックプロシージャに渡す値</param>
+        /// <param name="kbdllhookstruct">フックプロシージャに渡す値</param>
+        /// <returns>フックチェーン内の次のフックプロシージャの戻り値</returns>
+        [DllImport("user32.dll")]
+        public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, uint msg, ref KBDLLHOOKSTRUCT kbdllhookstruct);
+
+        /// <summary>
+        /// インストールされたフックプロシージャを削除する
+        /// </summary>
+        /// <param name="hhk">削除対象のフックプロシージャのハンドル</param>
+        /// <returns>成功/失敗</returns>
+        [DllImport("user32.dll")]
+        public static extern bool UnhookWindowsHookEx(IntPtr hhk);
         #endregion
 
         #region プロセスハンドル系
@@ -163,6 +259,240 @@ namespace EscapeFromRemoteWorkWpf.Common
         /// <returns></returns>
         [DllImport("dwmapi.dll")]
         public static extern long DwmGetWindowAttribute(IntPtr hWnd, DWMWINDOWATTRIBUTE dwAttributem, out bool pvAttribute, int cbAttribute);
+        #endregion
+    }
+
+    /// <summary>
+    /// キーボードフックの補助クラス
+    /// </summary>
+    public static class KeyboardHook
+    {
+        #region 構造体・列挙型
+        /// <summary>
+        /// 挙動の列挙型
+        /// </summary>
+        public enum Stroke
+        {
+            KEY_DOWN,
+            KEY_UP,
+            SYSKEY_DOWN,
+            SYSKEY_UP,
+            UNKNOWN
+        }
+
+        /// <summary>
+        /// キーボードの状態の構造体
+        /// </summary>
+        public struct KeyboardState
+        {
+            public Stroke Stroke;
+            public Keys Key;
+            public uint ScanCode;
+            public uint Flags;
+            public uint Time;
+            public IntPtr ExtraInfo;
+        }
+        #endregion
+
+        #region プロパティ
+        /// <summary>
+        /// キーボードのグローバルフックを実行しているかどうか
+        /// </summary>
+        public static bool IsHooking { get; private set; }
+        /// <summary>
+        /// キーボードのグローバルフックを中断しているかどうか
+        /// </summary>
+        public static bool IsPaused { get; private set; }
+        #endregion
+
+        #region デリゲート
+        /// <summary>
+        /// フックプロシージャ内でのイベント用のデリゲート
+        /// </summary>
+        /// <param name="state"></param>
+        public delegate void HookHandler(ref KeyboardState state);
+        #endregion
+
+        #region メンバ変数
+        /// <summary>
+        /// キーボードの状態
+        /// </summary>
+        private static KeyboardState _state;
+        /// <summary>
+        /// フックプロシージャのハンドル
+        /// </summary>
+        private static IntPtr _handle;
+        /// <summary>
+        /// 入力をキャンセルするかどうか
+        /// </summary>
+        private static bool _isCancel;
+        /// <summary>
+        /// 登録イベントのリスト
+        /// </summary>
+        private static List<HookHandler> _events;
+        /// <summary>
+        /// フックプロシージャ内でのイベント
+        /// </summary>
+        private static event HookHandler _hookEvent;
+        /// <summary>
+        /// フックチェーンにインストールするフックプロシージャのイベント
+        /// </summary>
+        private static event NativeMethods.KeyboardHookCallback _hookCallBack;
+        #endregion
+
+        #region メソッド
+        public static void Start()
+        {
+            if (IsHooking)
+            {
+                return;
+            }
+
+            IsHooking = true;
+            IsPaused = false;
+
+            _hookCallBack = HookProcedure;
+            var h = Marshal.GetHINSTANCE(typeof(KeyboardHook).Assembly.GetModules()[0]);
+
+            // WH_KEYBOARD_LL = 13
+            _handle = NativeMethods.SetWindowsHookEx(13, _hookCallBack, h, 0);
+
+            if (_handle == IntPtr.Zero)
+            {
+                IsHooking = false;
+                IsPaused = true;
+
+                throw new System.ComponentModel.Win32Exception();
+            }
+        }
+
+        public static void Stop()
+        {
+            if (!IsHooking)
+            {
+                return;
+            }
+
+            if (_handle != IntPtr.Zero)
+            {
+                IsHooking = false;
+                IsPaused = true;
+
+                ClearEvent();
+
+                NativeMethods.UnhookWindowsHookEx(_handle);
+                _handle = IntPtr.Zero;
+                _hookCallBack -= HookProcedure;
+            }
+        }
+
+        /// <summary>
+        /// キーボードのグローバルフックを中断する
+        /// </summary>
+        public static void Cancel()
+        {
+            IsPaused = true;
+        }
+
+        /// <summary>
+        /// キーボード操作時のイベントを追加する
+        /// </summary>
+        /// <param name="hookHandler"></param>
+        public static void AddEvent(HookHandler hookHandler)
+        {
+            if (_events == null)
+            {
+                _events = new List<HookHandler>();
+            }
+
+            _events.Add(hookHandler);
+            _hookEvent += hookHandler;
+        }
+
+        /// <summary>
+        /// キーボード操作時のイベントを削除する
+        /// </summary>
+        /// <param name="hookHandler"></param>
+        public static void RemoveEvent(HookHandler hookHandler)
+        {
+            if (_events == null)
+            {
+                return;
+            }
+
+            _hookEvent -= hookHandler;
+            _events.Remove(hookHandler);
+        }
+
+        /// <summary>
+        /// キーボード操作時のイベントを全て削除する
+        /// </summary>
+        public static void ClearEvent()
+        {
+            if (_events == null)
+            {
+                return;
+            }
+
+            foreach (var e in _events)
+            {
+                _hookEvent -= e;
+            }
+
+            _events.Clear();
+        }
+
+        /// <summary>
+        /// フックチェーンにインストールするフックプロシージャ
+        /// </summary>
+        /// <param name="nCode">フックプロシージャに渡すフックコード</param>
+        /// <param name="msg">フックプロシージャに渡す値</param>
+        /// <param name="mslhookstruct">フックプロシージャに渡す値</param>
+        /// <returns>フックチェーン内の次のフックプロシージャの戻り値</returns>
+        private static IntPtr HookProcedure(int nCode, uint msg, ref KBDLLHOOKSTRUCT mslhookstruct)
+        {
+            if (nCode >= 0 && _hookEvent != null && !IsPaused)
+            {
+                _state.Stroke = GetStroke(msg);
+                _state.Key = (Keys)mslhookstruct.vkCode;
+                _state.ScanCode = mslhookstruct.scanCode;
+                _state.Flags = mslhookstruct.flags;
+                _state.Time = mslhookstruct.time;
+                _state.ExtraInfo = mslhookstruct.dwExtraInfo;
+
+                _hookEvent(ref _state);
+
+                if (_isCancel)
+                {
+                    _isCancel = false;
+                    return (IntPtr)1;
+                }
+            }
+
+            return NativeMethods.CallNextHookEx(_handle, nCode, msg, ref mslhookstruct);
+        }
+
+        /// <summary>
+        /// キーボードの挙動を取得する
+        /// </summary>
+        /// <param name="msg">キーボードに関するウィンドウメッセージ</param>
+        /// <returns>キーボードの挙動</returns>
+        private static Stroke GetStroke(uint msg)
+        {
+            switch (msg)
+            {
+                case 0x100:
+                    return Stroke.KEY_DOWN;
+                case 0x101:
+                    return Stroke.KEY_UP;
+                case 0x104:
+                    return Stroke.SYSKEY_DOWN;
+                case 0x105:
+                    return Stroke.SYSKEY_UP;
+                default:
+                    return Stroke.UNKNOWN;
+            }
+        }
         #endregion
     }
 }

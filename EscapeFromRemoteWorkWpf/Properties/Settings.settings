@@ -50,5 +50,11 @@
     <Setting Name="TargetProcesses" Type="System.Collections.ObjectModel.ObservableCollection&lt;System.String&gt;" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="KeyMinRandomSec" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="KeyMaxRandomSec" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">60</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

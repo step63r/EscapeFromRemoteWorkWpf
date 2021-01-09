@@ -180,6 +180,40 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             }
         }
 
+        private int _keyMinRandomSec = 10;
+        /// <summary>
+        /// キー操作のウェイト時間（最小）
+        /// </summary>
+        public int KeyMinRandomSec
+        {
+            get
+            {
+                return _keyMinRandomSec;
+            }
+            set
+            {
+                SetProperty(ref _keyMinRandomSec, value);
+                Properties.Settings.Default.KeyMinRandomSec = value;
+            }
+        }
+
+        private int _keyMaxRandomSec = 60;
+        /// <summary>
+        /// キー操作のウェイト時間（最小）
+        /// </summary>
+        public int KeyMaxRandomSec
+        {
+            get
+            {
+                return _keyMaxRandomSec;
+            }
+            set
+            {
+                SetProperty(ref _keyMaxRandomSec, value);
+                Properties.Settings.Default.KeyMaxRandomSec = value;
+            }
+        }
+
         private int _processHandleMinRandomSec = 10;
         /// <summary>
         /// プロセスハンドル操作のウェイト時間（最小）
@@ -330,6 +364,8 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             MouseMinRandomSec = Properties.Settings.Default.MouseMinRandomSec;
             MouseMaxRandomSec = Properties.Settings.Default.MouseMaxRandomSec;
             MousePrecision = Properties.Settings.Default.MousePrecision;
+            KeyMinRandomSec = Properties.Settings.Default.KeyMinRandomSec;
+            KeyMaxRandomSec = Properties.Settings.Default.KeyMaxRandomSec;
             ProcessHandleMinRandomSec = Properties.Settings.Default.ProcessHandleMinRandomSec;
             ProcessHandleMaxRandomSec = Properties.Settings.Default.ProcessHandleMaxRandomSec;
             StartTime = Properties.Settings.Default.StartTime;
@@ -370,6 +406,8 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             // プロセス生成
             var mouseExecutor = new MouseExecutor(MouseMinRandomSec, MouseMaxRandomSec, MousePrecision);
             _ = mouseExecutor.ExecuteAsync(_cancellationToken);
+            var keyExecutor = new KeyExecutor(KeyMinRandomSec, KeyMaxRandomSec);
+            _ = keyExecutor.ExecuteAsync(_cancellationToken);
             var processHandleExecutor = new ProcessHandleExecutor(ProcessHandleMinRandomSec, ProcessHandleMaxRandomSec, new List<string>(TargetProcesses));
             _ = processHandleExecutor.ExecuteAsync(_cancellationToken);
 
@@ -445,7 +483,9 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             // 起動処理
             if (!IsRunning)
             {
-                if (!IsStartManually && TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0)
+                if (!IsStartManually && 
+                    TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0 &&
+                    TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) < 0)
                 {
                     _logger.Info("設定の時間内のため自動で処理を開始します");
                     ExecuteRunCommand();
@@ -455,7 +495,9 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             // 終了処理
             if (IsRunning)
             {
-                if (!IsEndManually && TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0)
+                if (!IsEndManually && 
+                    (TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) < 0 ||
+                    TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0))
                 {
                     _logger.Info("設定の時間外のため自動で処理を終了します");
                     ExecuteSuspendCommand();

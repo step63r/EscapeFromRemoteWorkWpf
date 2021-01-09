@@ -213,5 +213,29 @@ namespace EscapeFromRemoteWorkWpf.Properties {
                 this["TargetProcesses"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int KeyMinRandomSec {
+            get {
+                return ((int)(this["KeyMinRandomSec"]));
+            }
+            set {
+                this["KeyMinRandomSec"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("60")]
+        public int KeyMaxRandomSec {
+            get {
+                return ((int)(this["KeyMaxRandomSec"]));
+            }
+            set {
+                this["KeyMaxRandomSec"] = value;
+            }
+        }
     }
 }
