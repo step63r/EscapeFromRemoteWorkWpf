@@ -442,9 +442,7 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             // 起動処理
             if (!IsRunning)
             {
-                if (!IsStartManually && 
-                    TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0 &&
-                    TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) < 0)
+                if (!IsStartManually && TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0)
                 {
                     Debug.WriteLine("設定の時間内のため自動で処理を開始します");
                     ExecuteRunCommand();
@@ -454,9 +452,7 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             // 終了処理
             if (IsRunning)
             {
-                if (!IsEndManually &&
-                    (TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) < 0 ||
-                    TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0))
+                if (!IsEndManually && TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0)
                 {
                     Debug.WriteLine("設定の時間外のため自動で処理を終了します");
                     ExecuteSuspendCommand();
