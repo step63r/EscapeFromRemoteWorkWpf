@@ -483,24 +483,54 @@ namespace EscapeFromRemoteWorkWpf.ViewModels
             // 起動処理
             if (!IsRunning)
             {
-                if (!IsStartManually && 
-                    TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0 &&
-                    TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) < 0)
+                if (!IsStartManually)
                 {
-                    _logger.Info("設定の時間内のため自動で処理を開始します");
-                    ExecuteRunCommand();
+                    if (IsEndManually)
+                    {
+                        if (TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0)
+                        {
+                            _logger.Info("設定の時間内のため自動で処理を開始します");
+                            _logger.Info($"  IsStartManually: {IsStartManually}, IsEndManually: {IsEndManually}");
+                            ExecuteRunCommand();
+                        }
+                    }
+                    else
+                    {
+                        if (TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) > 0 &&
+                            TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) < 0)
+                        {
+                            _logger.Info("設定の時間内のため自動で処理を開始します");
+                            _logger.Info($"  IsStartManually: {IsStartManually}, IsEndManually: {IsEndManually}");
+                            ExecuteRunCommand();
+                        }
+                    }
                 }
             }
 
             // 終了処理
             if (IsRunning)
             {
-                if (!IsEndManually && 
-                    (TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) < 0 ||
-                    TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0))
+                if (!IsEndManually)
                 {
-                    _logger.Info("設定の時間外のため自動で処理を終了します");
-                    ExecuteSuspendCommand();
+                    if (IsStartManually)
+                    {
+                        if (TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0)
+                        {
+                            _logger.Info("設定の時間外のため自動で処理を終了します");
+                            _logger.Info($"  IsStartManually: {IsStartManually}, IsEndManually: {IsEndManually}");
+                            ExecuteSuspendCommand();
+                        }
+                    }
+                    else
+                    {
+                        if (TimeSpan.Compare(DateTime.Now.TimeOfDay, StartTime.TimeOfDay) < 0 ||
+                            TimeSpan.Compare(DateTime.Now.TimeOfDay, EndTime.TimeOfDay) > 0)
+                        {
+                            _logger.Info("設定の時間外のため自動で処理を終了します");
+                            _logger.Info($"  IsStartManually: {IsStartManually}, IsEndManually: {IsEndManually}");
+                            ExecuteSuspendCommand();
+                        }
+                    }
                 }
             }
         }
